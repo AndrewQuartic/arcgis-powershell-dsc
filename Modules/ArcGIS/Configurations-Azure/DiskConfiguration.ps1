@@ -20,27 +20,32 @@
             SizeInGB    = 4096
         }
 
-		$DataDiskDriveLetter = 'F'
         $Depends = @()
-        $UnallocatedDataDisks = Get-Disk | Where-Object partitionstyle -eq 'raw'
-        if(($UnallocatedDataDisks | Measure-Object).Count -gt 0)
-        {
-            ArcGIS_xDisk DataDisk
+        $UnallocatedDataDisks = Get-Disk | Where-Object partitionstyle -eq 'raw' | Sort-Object number
+
+        # Initialize an array of disks starting with F
+        $Letters = 70..89 | ForEach-Object { [char]$_ }
+        $Count = 0
+
+        # iterate though unallocated disks and partition each in sequence ordered by disk number
+        foreach ($Disk in $UnallocatedDataDisks) {
+            $DataDiskDriveLetter = $Letters[$Count].ToString()
+            ArcGIS_xDisk DataDisk${DataDiskDriveLetter}
 			{
-				DiskNumber = 2
+				DiskNumber = $Disk.number
 				DriveLetter = $DataDiskDriveLetter
 			}   
-            $Depends += '[ArcGIS_xDisk]DataDisk'
+            if(Get-Partition -DriveLetter $DataDiskDriveLetter -ErrorAction Ignore) 
+            {
+                ArcGIS_Disk DataDiskSize
+                {
+                    DriveLetter = $DataDiskDriveLetter
+                    SizeInGB    = 4095
+                    DependsOn   = $Depends			
+                }	
+            }
+            $Depends += "[ArcGIS_xDisk]DataDisk${DataDiskDriveLetter}"
+            $Count++
         }
-		
-        if(Get-Partition -DriveLetter $DataDiskDriveLetter -ErrorAction Ignore) 
-		{
-			ArcGIS_Disk DataDiskSize
-			{
-				DriveLetter = $DataDiskDriveLetter
-				SizeInGB    = 4095
-				DependsOn   = $Depends			
-			}	
-		}
     }
 }
