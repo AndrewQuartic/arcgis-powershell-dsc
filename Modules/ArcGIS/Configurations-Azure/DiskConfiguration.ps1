@@ -21,7 +21,7 @@
         }
 
         $Depends = @()
-        $UnallocatedDataDisks = Get-Disk | Where-Object partitionstyle -eq 'raw' | Sort-Object number
+        $UnallocatedDataDisks = Get-Disk | Where-Object partitionstyle -eq 'raw' | Sort-Object Number
 
         # Initialize an array of disks starting with F
         $Letters = 70..89 | ForEach-Object { [char]$_ }
@@ -32,7 +32,7 @@
             $DataDiskDriveLetter = $Letters[$Count].ToString()
             ArcGIS_xDisk DataDisk${DataDiskDriveLetter}
 			{
-				DiskNumber = $Disk.number
+				DiskNumber = $Disk.Number
 				DriveLetter = $DataDiskDriveLetter
 			}   
             if(Get-Partition -DriveLetter $DataDiskDriveLetter -ErrorAction Ignore) 
