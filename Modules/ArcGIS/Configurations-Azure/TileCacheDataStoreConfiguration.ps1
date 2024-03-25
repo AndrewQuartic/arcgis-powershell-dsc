@@ -96,11 +96,31 @@
         
         if($EnableDataDisk -ieq 'true')
         {
-            ArcGIS_xDisk DataDisk
-            {
-                DiskNumber  =  2
-                DriveLetter = 'F'
+            $UnallocatedDataDisks = Get-Disk | Where-Object partitionstyle -eq 'raw' | Sort-Object Number
+            # Initialize an array of disks starting with F
+            $Letters = 70..89 | ForEach-Object { [char]$_ }
+            $Count = 0
+
+            # iterate though unallocated disks and partition each in sequence ordered by disk number
+            foreach ($Disk in $UnallocatedDataDisks) {
+                $DataDiskDriveLetter = $Letters[$Count].ToString()
+                ArcGIS_xDisk DataDisk${DataDiskDriveLetter}
+                {
+                    DiskNumber = $Disk.Number
+                    DriveLetter = $DataDiskDriveLetter
+                }   
+                if(Get-Partition -DriveLetter $DataDiskDriveLetter -ErrorAction Ignore) 
+                {
+                    ArcGIS_Disk DataDiskSize
+                    {
+                        DriveLetter = $DataDiskDriveLetter
+                        SizeInGB    = 4095
+                        DependsOn   = $DependsOn		
+                    }	
+                }
+                $Count++
             }
+			$DependsOn += "[ArcGIS_xDisk]DataDisk${DataDiskDriveLetter}" 
         }
 
         $HasValidServiceCredential = ($ServiceCredential -and ($ServiceCredential.GetNetworkCredential().Password -ine 'Placeholder'))
